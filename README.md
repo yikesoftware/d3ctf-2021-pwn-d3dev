@@ -94,3 +94,7 @@ void __fastcall d3dev_mmio_write(d3devState *opaque, hwaddr addr, uint64_t val, 
 所以只要同时控制好`opaque->r_seed`和`opaque->rand_r`就可以构造出`system("/bin/sh\x00")`；
 
 利用上的各种细节请查看exp.
+
+Author
+
+赤道企鹅 eqqie

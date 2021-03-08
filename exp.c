@@ -23,8 +23,6 @@ const uint32_t pmio_phy_base = 0xc040;
 const uint32_t pmio_mem_size = 0x20;
 
 const char sys_mem_file[] = "/dev/mem";
-// /sys/devices/pci0000:00/0000:00:04.0/resource
-const char cmd[] = "uname -a;whoami;ls;";
 
 uint64_t mmio_mem = 0x0;
 uint64_t pmio_mem = 0x0;

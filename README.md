@@ -93,7 +93,7 @@ void __fastcall d3dev_mmio_write(d3devState *opaque, hwaddr addr, uint64_t val, 
 
 所以只要同时控制好`opaque->r_seed`和`opaque->rand_r`就可以构造出`system("/bin/sh\x00")`；
 
-> By the way, 对于这题，在写入数据和读取数据的时候其实不用分成两次四字节来读写，有兴趣的话可以再仔细看看
+> By the way, 对于这题，在exploit中实现写入数据和读取数据的时候其实不用分成两次四字节来读写，有兴趣的话可以再仔细看看
 
 利用上的各种细节请查看exp.
 
